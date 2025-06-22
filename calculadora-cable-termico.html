@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Potencia y temperatura ⚡ – Cable térmico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+                   "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      background-color: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      max-width: 420px;
+      width: 100%;
+      padding: 2.5rem 2rem 2rem;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px) scale(1.015);
+      box-shadow: 0 12px 32px rgba(0,0,0,.12);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700; /* más negrita, como el ejemplo */
+      text-align: center;
+      margin: 0 0 2rem;
+    }
+    label {
+      font-size: 0.9rem;
+      margin-bottom: .25rem;
+      display: block;
+      color: #2b2e33;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: .6rem .75rem;
+      border: 1px solid #d0d5dd;
+      border-radius: .5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color .2s;
+    }
+    input[type="number"]:focus {
+      outline: 0;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,.2);
+    }
+    .mt-4 { margin-top: 1.5rem; }
+    .results {
+      font-size: 0.95rem;
+      margin-top: 1.25rem;
+      line-height: 1.7;
+    }
+    .results strong { font-weight: 600; }
+
+    footer {
+      font-size: 0.8rem;
+      color: #6b7280; /* gris Tailwind slate‑500 */
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Potencia y temperatura ⚡</h1>
+
+    <form id="calcForm" autocomplete="off">
+      <div class="field">
+        <label for="length">Longitud (m)</label>
+        <input type="number" id="length" min="0.1" step="0.1" value="15" required>
+      </div>
+
+      <div class="field mt-4">
+        <label for="voltage">Voltaje (V)</label>
+        <input type="number" id="voltage" min="1" step="1" value="220" required>
+      </div>
+
+      <div class="field mt-4">
+        <label for="resistance">Resistencia del conductor (Ω/m)</label>
+        <input type="number" id="resistance" min="0.1" step="0.1" value="33" required>
+      </div>
+    </form>
+
+    <div class="results" id="results"></div>
+  </main>
+
+  <footer>
+    Creado con <span style="color:#ef4444;">❤️</span> por Joel © 2025
+  </footer>
+
+<script>
+(function () {
+  const form      = document.getElementById('calcForm');
+  const resultsEl = document.getElementById('results');
+
+  const refPts = [
+    { p: 5,  t: 35 },
+    { p: 10, t: 45 },
+    { p: 15, t: 55 },
+    { p: 20, t: 65 },
+    { p: 25, t: 80 }
+  ];
+
+  function estimateTemp(p) {
+    if (p <= refPts[0].p) {
+      return 25 + (p / refPts[0].p) * (refPts[0].t - 25);
+    }
+    for (let i = 1; i < refPts.length; i++) {
+      const prev = refPts[i - 1];
+      const curr = refPts[i];
+      if (p <= curr.p) {
+        const ratio = (p - prev.p) / (curr.p - prev.p);
+        return prev.t + ratio * (curr.t - prev.t);
+      }
+    }
+    const last = refPts[refPts.length - 1];
+    return last.t + (p - last.p) * 3;
+  }
+
+  function recalc() {
+    const L  = parseFloat(form.length.value);
+    const V  = parseFloat(form.voltage.value);
+    const Rm = parseFloat(form.resistance.value);
+
+    if (!L || !V || !Rm) {
+      resultsEl.innerHTML = '<em>Introduzca todos los valores…</em>';
+      return;
+    }
+
+    const Rtotal = L * Rm;
+    const Ptotal = (V * V) / Rtotal;
+    const PperM  = Ptotal / L;
+    const Temp   = estimateTemp(PperM);
+
+    resultsEl.innerHTML = `
+      Resistencia total: <strong>${Rtotal.toFixed(2)} Ω</strong><br>
+      Potencia total: <strong>${Ptotal.toFixed(2)} W</strong><br>
+      Potencia por metro: <strong>${PperM.toFixed(2)} W/m</strong><br>
+      Temperatura estimada: ≈ <strong>${Temp.toFixed(1)} °C</strong>
+    `;
+  }
+
+  form.addEventListener('input', recalc);
+  recalc();
+})();
+</script>
+</body>
+</html>
